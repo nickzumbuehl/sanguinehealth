@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
-
+server = app.server
 
 url_list = [
     "https://drive.google.com/file/d/17XeEf6NqDPRmoZG7DUA_A5SStmQEx5PD/view?usp=sharing",
