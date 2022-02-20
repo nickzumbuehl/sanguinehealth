@@ -20,11 +20,17 @@ url_list = [
 ]
 url_list = ["burn_out_test.csv", "burn_out_train.csv"]
 
+url_list = [
+    "https://raw.githubusercontent.com/nickzumbuehl/sanguinehealth/master/burn_out_train.csv",
+    "https://raw.githubusercontent.com/nickzumbuehl/sanguinehealth/master/burn_out_test.csv"
+]
+
 df_bo = pd.DataFrame()
 for url in url_list:
     # path = 'https://drive.google.com/uc?export=download&id=' + url.split('/')[-2]
-    path = os.path.join(path_base, url)
-    df_bo = pd.concat([df_bo, pd.read_csv(path)])
+    #path = os.path.join(path_base, url)
+
+    df_bo = pd.concat([df_bo, pd.read_csv(url)])
 
 # DATA ENHANCEMENT => Adding team to Employee
 df_t = df_bo.reset_index().rename(columns={"index": "identifier"})
@@ -52,58 +58,7 @@ df_mi = df_mi.rename(columns={
 df_mh = pd.read_csv(os.path.join(path_base, file_name))
 df_mh = df_mh[lambda x: (x.measure_id == 6) & (x.metric_id == 2)]
 
-# ------------------------------------------------------------------------------
-# # App layout
-# app.layout = html.Div(
-#     className="borderdev",
-#     children=[
-#         html.H1("Dashboard Template: Mental Health & Anxiety", className="padding"),
-#         dbc.Row(
-#             className="padding border",
-#             children=[
-#                 dbc.Col([
-#                     dcc.Dropdown(
-#                         className="padding",
-#                         id="slct_cause",
-#                         options=[{"label": i, "value": i} for i in set(df_mh.cause_name)],
-#                         multi=False,
-#                         value="Mental disorders",
-#                         style={'width': "100%"}
-#                     ),
-#                     dcc.Dropdown(
-#                         className="padding",
-#                         id="slct_country",
-#                         options=[{"label": i, "value": i} for i in set(df_mh.location_name)],
-#                         multi=True,
-#                         value="Global",
-#                         style={'width': "100%"}
-#                     ),
-#                 ]),
-#                 dbc.Col(
-#                     children=[dcc.Graph(id='my_bee_map', figure={})],
-#                 ),
-#             ]
-#         ),
-#         dbc.Row(
-#             className="padding border",
-#             children=[
-#                 dbc.Col([
-#                     dcc.Dropdown(
-#                         className="padding",
-#                         id="slct_bar_country",
-#                         options=[{"label": i, "value": i} for i in set(df_mi.country)],
-#                         multi=True,
-#                         value=list(set(df_mi.country)),  # ["Australia", "Switzerland", "China", "Japan"],
-#                         style={'width': "100%"})]
-#                 ),
-#                 dbc.Col(
-#                     children=[dcc.Graph(id='bar_plot', figure={})],
-#                 )
-#             ]
-#         )
-#     ]
-# )
-
+# APP LAYOUT
 sidebar = html.Div(
     className="sidebar",
     children=[
@@ -144,42 +99,6 @@ def render_page_content(pathname):
 
 
 @app.callback(
-    Output(component_id='my_bee_map', component_property='figure'),
-    [Input(component_id='slct_cause', component_property='value'),
-     Input(component_id='slct_country', component_property='value')]
-)
-def update_graph(option_slctd, slct_country):
-
-    if not type(slct_country) == list:
-        slct_country = [slct_country]
-
-    df = df_mh.copy()
-
-    df = df[lambda x: (x.cause_name == option_slctd) & (x.location_name.isin(slct_country))].sort_values(
-        by=["location_name", "year"], ascending=True)
-
-    fig = px.line(df, x='year', y="val", color="location_name")
-
-    return fig
-
-
-@app.callback(
-    Output(component_id="bar_plot", component_property="figure"),
-    [Input(component_id="slct_bar_country", component_property="value")],
-)
-def update_bar_chart(slct_bar_country):
-
-    if not type(slct_bar_country) == list:
-        slct_bar_country = [slct_bar_country]
-
-    df = df_mi[lambda x: x.country.isin(slct_bar_country)].sort_values(by="nr_hostpitals_per_100K", ascending=False)
-
-    bar_fig = px.bar(df, x='country', y='nr_hostpitals_per_100K')
-
-    return bar_fig
-
-
-@app.callback(
     Output(component_id="team_plt", component_property="figure"),
     [Input(component_id="slct_team", component_property="value")]
 )
@@ -197,6 +116,27 @@ def team_plot(slct_team):
         color="team",  # Designation
         orientation='h',
         title="MFS of Team Members",
+        color_discrete_sequence=px.colors.qualitative.Set3
+    )
+
+    return fig
+
+
+@app.callback(
+    Output(component_id="corr_tenure_mfs", component_property="figure"),
+    [Input(component_id="slct_team", component_property="value")]
+)
+def plt_corr_tenure_mfs(slct_team):
+
+    if not type(slct_team) == list:
+        slct_team = [slct_team]
+
+    df_d = df_t[lambda x: x.team.isin(slct_team)]
+
+    fig = px.scatter(
+        df_d, x="Designation", y="mental_fatigue_score",
+        color="Resource Allocation",
+        title="Correlation of Tenure & MSF",
         color_discrete_sequence=px.colors.qualitative.Set3
     )
 
@@ -226,10 +166,6 @@ def display_exec_summary():
 
 
 def display_team_employee_view():
-    """
-    select X number of teams | or select
-    :return:
-    """
     return (
         [
             dbc.Row(
@@ -253,7 +189,7 @@ def display_team_employee_view():
             dbc.Row(
                 children=[
                     dbc.Col(className="container-item", children=[dcc.Graph(figure=display_team_graph())], md=5),
-                    dbc.Col(className="container-item", children=[dcc.Graph(figure=display_executive_distribution())], md=6)
+                    dbc.Col(className="container-item", children=[dcc.Graph(id='corr_tenure_mfs', figure={})], md=6)
                 ]
             ),
         ]
