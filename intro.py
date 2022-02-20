@@ -9,10 +9,6 @@ import dash_bootstrap_components as dbc
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
-path_base = "/Users/zumbuehlnick/Documents/DashAppTutorial"
-file_name = "IHME-GBD_2019_DATA-1c06533e-1.csv"
-file_name_mental_inst = "mental_institutions.csv"
-
 
 url_list = [
     "https://drive.google.com/file/d/17XeEf6NqDPRmoZG7DUA_A5SStmQEx5PD/view?usp=sharing",
@@ -49,14 +45,6 @@ df_t = df_t.dropna()
 
 df_t = df_t.rename(columns={"Mental Fatigue Score": "mental_fatigue_score"})
 
-df_mi = pd.read_csv(os.path.join(path_base, file_name_mental_inst))
-df_mi = df_mi.rename(columns={
-    "Mental hospitals (per 100 000 population)":  "nr_hostpitals_per_100K",
-    "Country": "country"
-})
-
-df_mh = pd.read_csv(os.path.join(path_base, file_name))
-df_mh = df_mh[lambda x: (x.measure_id == 6) & (x.metric_id == 2)]
 
 # APP LAYOUT
 sidebar = html.Div(
