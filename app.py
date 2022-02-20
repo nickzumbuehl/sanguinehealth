@@ -1,13 +1,13 @@
 import pandas as pd
 import plotly.express as px  # (version 4.7.0 or higher)
 import plotly.graph_objects as go
-from dash import Dash, dcc, html, Input, Output  # pip install dash (version 2.0.0 or higher)
+from dash import Dash, dcc, html, Input, Output, dash_table  # pip install dash (version 2.0.0 or higher)
 import os
 import numpy as np
 import dash_bootstrap_components as dbc
 
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
+app = Dash(__name__, external_stylesheets=[dbc.themes.LUX, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP])
 server = app.server
 
 url_list = [
@@ -45,11 +45,18 @@ df_t = df_t.dropna()
 
 df_t = df_t.rename(columns={"Mental Fatigue Score": "mental_fatigue_score"})
 
+labels = ["<2", "2-4", "4-6", "6-8", ">8"]
+df_t = df_t.assign(
+    mfs_bucket=lambda x: pd.qcut(x.mental_fatigue_score,q=[0, .2, .4, .6, .8, 1],labels=labels,),
+    helper_ones = 1
+)
 
 # APP LAYOUT
 sidebar = html.Div(
     className="sidebar",
     children=[
+        html.I(className="fa-regular fa-face-swear"),
+        html.I(className="bi bi-info-circle-fill me-2"),
         html.H4("Mental Health Monitor"),
         html.Hr(),
         dbc.Nav(
@@ -124,7 +131,7 @@ def plt_corr_tenure_mfs(slct_team):
     fig = px.scatter(
         df_d, x="Designation", y="mental_fatigue_score",
         color="Resource Allocation",
-        title="Correlation of Tenure & MSF",
+        title="Correlation of Level of Seniority & MSF",
         color_discrete_sequence=px.colors.qualitative.Set3
     )
 
@@ -138,15 +145,15 @@ def display_exec_summary():
             dbc.Row(
                 className="",
                 children=[
-                    dbc.Col(className="container-item center_sub_div", children=display_average_stress_level(), md=5),
-                    dbc.Col(className="container-item", children=[dcc.Graph(figure=display_exec_graph())], md=6)
+                    dbc.Col(className="container-item", children=display_average_stress_level(), xl=5),
+                    dbc.Col(className="container-item", children=[dcc.Graph(figure=display_exec_graph())], xl=6)
                 ]
             ),
             dbc.Row(
                 className="",
                 children=[
-                    dbc.Col(className="container-item", children=[dcc.Graph(figure=display_team_graph())], md=5),
-                    dbc.Col(className="container-item", children=[dcc.Graph(figure=display_executive_distribution())], md=6)
+                    dbc.Col(className="container-item", children=[dcc.Graph(figure=display_team_graph())], xl=5),
+                    dbc.Col(className="container-item", children=[dcc.Graph(figure=display_pie_chart_mfs())], xl=6)
                 ]
             ),
         ]
@@ -186,14 +193,23 @@ def display_team_employee_view():
 
 def display_average_stress_level():
 
-    mean_stress = np.round(df_t.mental_fatigue_score.astype(float).mean(), 2)
+    columns_selected = ["emp_code", "team", "Designation", "Resource Allocation", "Burn Rate"]
+
+    df_d = df_t[lambda x: x["Burn Rate"] != 1].sort_values(by=["Burn Rate"], ascending=False).head(15)
+
+    # mean_stress = np.round(df_t.mental_fatigue_score.astype(float).mean(), 2)
+    #
+    # return (
+    #     html.Div(
+    #         className="boxtext",
+    #         children=[
+    #             html.P(f"Average Mental Fatigue Score (MFS) of your Employees is {mean_stress}"),
+    #         ])
+    # )
 
     return (
-        html.Div(
-            className="boxtext",
-            children=[
-                html.P(f"Average Mental Fatigue Score (MFS) of your Employees is {mean_stress}"),
-            ])
+        dbc.Row(children=[html.P("Employees most likely to burn")]),
+        dbc.Row(dash_table.DataTable(df_d.to_dict('records'), [{"name": i, "id": i} for i in columns_selected]))
     )
 
 
@@ -226,17 +242,14 @@ def display_exec_graph():
     return fig
 
 
-def display_executive_distribution():
+def display_pie_chart_mfs():
 
-    df_d = df_t[lambda x: x.Designation >= 4]
-
-    fig = px.histogram(
-        df_d,
-        x="mental_fatigue_score",
-        color="Gender",
-        title="Distribution of MFS for Mid & Top Management",
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
+    fig = px.pie(
+        df_t,
+        values='helper_ones',
+        names='mfs_bucket',
+        color_discrete_sequence=px.colors.qualitative.Set3,
+        title='MFS by Groups')
 
     return fig
 
