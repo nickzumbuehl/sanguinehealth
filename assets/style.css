@@ -1,0 +1,51 @@
+.margin-10 {
+    margin: 10px;
+}
+
+.boxtext {
+    max-width: 70%;
+    font-size: 24px;
+    border-radius: 10px;
+    padding: 10px;
+    background-color: aliceblue;
+}
+
+.container-item {
+    border: white solid 4px;
+    border-radius: 10px;
+    margin: 10px;
+    background-color: white;
+}
+
+.center_sub_div {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+
+h4  {
+    font-size: 40px;
+}
+
+body {
+    background-color: aliceblue;
+}
+
+.content {
+    margin-left: 20%;
+    margin-right: 1rem;
+    margin-top: 0rem;
+    padding: 2rem 1rem;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 20%;
+    padding: 2rem 1rem;
+    background-color: aliceblue;
+    border-right: black solid 2px;
+}
